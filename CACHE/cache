@@ -1,0 +1,286 @@
+
+.MODEL SMALL
+.STACK 100H
+
+.DATA
+TITLE1      DB 13,10,'========================================$'
+TITLE2      DB 13,10,'     CACHE MAPPING TECHNIQUES - 8086$'
+TITLE3      DB 13,10,'========================================$'
+
+M1          DB 13,10,'1. DIRECT MAPPING$'
+M2          DB 13,10,'2. FULLY ASSOCIATIVE MAPPING$'
+M3          DB 13,10,'3. 2-WAY SET ASSOCIATIVE MAPPING$'
+M4          DB 13,10,'4. EXIT$'
+
+CHOICE_MSG  DB 13,10,'Enter choice: $'
+BLOCK_MSG   DB 13,10,'Enter memory block number (0-99): $'
+
+DIRECT_MSG  DB 13,10,'--- DIRECT MAPPING ---$'
+LINE_MSG    DB 13,10,'Cache Line = $'
+
+FULL_MSG    DB 13,10,'--- FULLY ASSOCIATIVE MAPPING ---$'
+ANY_MSG     DB 13,10,'Block can be placed in ANY cache line (0-7).$'
+
+SET_MSG     DB 13,10,'--- 2-WAY SET ASSOCIATIVE MAPPING ---$'
+SET_MSG2    DB 13,10,'Set Number = $'
+WAY_MSG     DB 13,10,'Block can be placed in Way 0 or Way 1.$'
+
+INVALID_MSG DB 13,10,'Invalid choice!$'
+NEW_LINE    DB 13,10,'$'
+
+BLOCK_NO    DW 0
+
+.CODE
+
+MAIN PROC
+    MOV AX, @DATA
+    MOV DS, AX
+
+MENU:
+    LEA DX, TITLE1
+    MOV AH, 09H
+    INT 21H
+
+    LEA DX, TITLE2
+    MOV AH, 09H
+    INT 21H
+
+    LEA DX, TITLE3
+    MOV AH, 09H
+    INT 21H
+
+    LEA DX, M1
+    MOV AH, 09H
+    INT 21H
+
+    LEA DX, M2
+    MOV AH, 09H
+    INT 21H
+
+    LEA DX, M3
+    MOV AH, 09H
+    INT 21H
+
+    LEA DX, M4
+    MOV AH, 09H
+    INT 21H
+
+    LEA DX, CHOICE_MSG
+    MOV AH, 09H
+    INT 21H
+
+    MOV AH, 01H
+    INT 21H
+
+    CMP AL, '1'
+    JE DIRECT_ROUTINE
+
+    CMP AL, '2'
+    JE FULL_ROUTINE
+
+    CMP AL, '3'
+    JE SET_ROUTINE
+
+    CMP AL, '4'
+    JE END_PROGRAM
+
+    LEA DX, INVALID_MSG
+    MOV AH, 09H
+    INT 21H
+
+    CALL CLEAR_ENTER
+    JMP MENU
+
+DIRECT_ROUTINE:
+    CALL CLEAR_ENTER
+
+    LEA DX, DIRECT_MSG
+    MOV AH, 09H
+    INT 21H
+
+    LEA DX, BLOCK_MSG
+    MOV AH, 09H
+    INT 21H
+
+    CALL READ_NUMBER
+    MOV BLOCK_NO, AX
+
+    ; Cache Line = Block MOD 8
+    MOV AX, BLOCK_NO
+    XOR DX, DX
+    MOV BX, 8
+    DIV BX
+
+    MOV AX, DX
+
+    LEA DX, LINE_MSG
+    MOV AH, 09H
+    INT 21H
+
+    CALL PRINT_NUMBER
+    CALL CLEAR_ENTER
+    JMP MENU
+
+FULL_ROUTINE:
+    CALL CLEAR_ENTER
+
+    LEA DX, FULL_MSG
+    MOV AH, 09H
+    INT 21H
+
+    LEA DX, BLOCK_MSG
+    MOV AH, 09H
+    INT 21H
+
+    CALL READ_NUMBER
+    MOV BLOCK_NO, AX
+
+    LEA DX, ANY_MSG
+    MOV AH, 09H
+    INT 21H
+
+    CALL CLEAR_ENTER
+    JMP MENU
+
+SET_ROUTINE:
+    CALL CLEAR_ENTER
+
+    LEA DX, SET_MSG
+    MOV AH, 09H
+    INT 21H
+
+    LEA DX, BLOCK_MSG
+    MOV AH, 09H
+    INT 21H
+
+    CALL READ_NUMBER
+    MOV BLOCK_NO, AX
+
+    ; Set = Block MOD 4
+    MOV AX, BLOCK_NO
+    XOR DX, DX
+    MOV BX, 4
+    DIV BX
+
+    MOV AX, DX
+
+    LEA DX, SET_MSG2
+    MOV AH, 09H
+    INT 21H
+
+    CALL PRINT_NUMBER
+
+    LEA DX, WAY_MSG
+    MOV AH, 09H
+    INT 21H
+
+    CALL CLEAR_ENTER
+    JMP MENU
+
+END_PROGRAM:
+    MOV AH, 4CH
+    MOV AL, 00H
+    INT 21H
+
+MAIN ENDP
+
+; =========================================
+; READ NUMBER (0-99)
+; =========================================
+READ_NUMBER PROC
+    XOR BX, BX
+
+READ_DIGIT:
+    MOV AH, 01H
+    INT 21H
+
+    CMP AL, 0DH
+    JE NUMBER_DONE
+
+    CMP AL, '0'
+    JB READ_DIGIT
+
+    CMP AL, '9'
+    JA READ_DIGIT
+
+    SUB AL, '0'
+    MOV AH, 00H
+
+    PUSH AX
+    MOV AX, BX
+    MOV CX, 10
+    MUL CX
+    MOV BX, AX
+    POP AX
+    ADD BX, AX
+
+    ; Limit input to 99
+    CMP BX, 99
+    JBE READ_DIGIT
+
+    ; Reset invalid value
+    XOR BX, BX
+    JMP READ_DIGIT
+
+NUMBER_DONE:
+    MOV AX, BX
+    RET
+READ_NUMBER ENDP
+
+; =========================================
+; PRINT NUMBER
+; =========================================
+PRINT_NUMBER PROC
+    PUSH BX
+    PUSH CX
+    PUSH DX
+
+    CMP AX, 0
+    JNE PRINT_NOT_ZERO
+
+    MOV DL, '0'
+    MOV AH, 02H
+    INT 21H
+    JMP PRINT_DONE
+
+PRINT_NOT_ZERO:
+    XOR CX, CX
+    MOV BX, 10
+
+CONVERT:
+    XOR DX, DX
+    DIV BX
+    PUSH DX
+    INC CX
+    CMP AX, 0
+    JNE CONVERT
+
+DISPLAY:
+    POP DX
+    ADD DL, '0'
+    MOV AH, 02H
+    INT 21H
+    LOOP DISPLAY
+
+PRINT_DONE:
+    POP DX
+    POP CX
+    POP BX
+    RET
+PRINT_NUMBER ENDP
+
+; =========================================
+; WAIT FOR ENTER
+; =========================================
+CLEAR_ENTER PROC
+WAIT_CR:
+    MOV AH, 01H
+    INT 21H
+
+    CMP AL, 0DH
+    JNE WAIT_CR
+
+    RET
+CLEAR_ENTER ENDP
+
+END MAIN
