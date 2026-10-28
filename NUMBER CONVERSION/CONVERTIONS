@@ -1,0 +1,87 @@
+//HEX TO BCD
+.MODEL SMALL
+.STACK 100H
+
+.DATA
+    HEXNUM DB 05H
+    BCD DB 0
+
+.CODE
+MAIN PROC
+    MOV AX, @DATA
+    MOV DS, AX
+
+    ; HEX to decimal digit
+    MOV AL, HEXNUM
+    ADD AL, 30H
+
+    ; Display result
+    MOV DL, AL
+    MOV AH, 02H
+    INT 21H
+
+    ; Exit
+    MOV AH, 4CH
+    INT 21H
+MAIN ENDP
+END MAIN
+
+
+//ASCII TO BCD
+
+.MODEL SMALL
+.STACK 100H
+
+.DATA
+    ASCII DB '5'
+    BCD DB ?
+
+.CODE
+MAIN PROC
+    MOV AX, @DATA
+    MOV DS, AX
+
+    ; ASCII to BCD
+    MOV AL, ASCII
+    SUB AL, 30H
+    MOV BCD, AL
+
+    ; Display result
+    ADD AL, 30H
+    MOV DL, AL
+    MOV AH, 02H
+    INT 21H
+
+    ; Exit
+    MOV AH, 4CH
+    INT 21H
+MAIN ENDP
+END MAIN
+
+
+//BCD TO ASCII
+.MODEL SMALL
+.STACK 100H
+
+.DATA
+    BCD DB 05H
+
+.CODE
+MAIN PROC
+    MOV AX, @DATA
+    MOV DS, AX
+
+    ; BCD to ASCII
+    MOV AL, BCD
+    ADD AL, 30H
+
+    ; Display result
+    MOV DL, AL
+    MOV AH, 02H
+    INT 21H
+
+    ; Exit
+    MOV AH, 4CH
+    INT 21H
+MAIN ENDP
+END MAIN
