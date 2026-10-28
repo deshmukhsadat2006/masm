@@ -1,0 +1,48 @@
+.MODEL SMALL
+.STACK 100H
+.DATA
+    ; Constants
+    SPEAKER_PORT   EQU 61h
+    PIT_CONTROL    EQU 43h
+    PIT_CHANNEL_2  EQU 42h
+
+.CODE
+MAIN PROC
+    MOV AX, @DATA
+    MOV DS, AX
+
+    ; Initialize PIT
+    MOV AL, 10110110b     ; Set PIT channel 2, mode 3, binary counting
+    OUT PIT_CONTROL, AL
+
+    ; Set frequency (440 Hz - A4 note)
+    MOV AX, 2712          ; 1193180 / 440 = 2712
+    OUT PIT_CHANNEL_2, AL ; <-- ERROR FIXED: AL contains the low byte of AX here
+    MOV AL, AH
+    OUT PIT_CHANNEL_2, AL ; Send high byte
+
+    ; Turn speaker on
+    IN AL, SPEAKER_PORT
+    OR AL, 00000011b      ; Set bits 0 and 1 (enable PIT connection to speaker)
+    OUT SPEAKER_PORT, AL
+
+    ; Wait for a duration (approx. 1 second depending on emulation speed)
+    MOV CX, 1000
+DelayLoop:
+    PUSH CX
+    MOV CX, 5000
+InnerLoop:
+    LOOP InnerLoop
+    POP CX
+    LOOP DelayLoop
+
+    ; Turn speaker off
+    IN AL, SPEAKER_PORT
+    AND AL, 11111100b     ; Clear bits 0 and 1
+    OUT SPEAKER_PORT, AL
+
+    ; Exit Program
+    MOV AH, 4CH
+    INT 21H
+MAIN ENDP
+END MAIN
