@@ -1,0 +1,34 @@
+
+.MODEL SMALL
+.STACK 100H
+
+.CODE
+MAIN PROC
+
+    MOV AX, 0013H
+    INT 10H
+
+    MOV CX, 50
+    MOV DX, 100
+
+LINE_LOOP:
+    MOV AH, 0CH
+    MOV AL, 0EH
+    MOV BH, 00H
+    INT 10H
+
+    INC CX
+    CMP CX, 200
+    JLE LINE_LOOP
+
+    MOV AH, 00H
+    INT 16H
+
+    MOV AX, 0003H
+    INT 10H
+
+    MOV AH, 4CH
+    INT 21H
+
+MAIN ENDP
+END MAIN
